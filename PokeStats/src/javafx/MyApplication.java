@@ -39,14 +39,9 @@ public class MyApplication extends Application {
 		}
 		
 		private void setStartScene(Stage stage) {
-//			MainWindowController controller = new MainWindowController();
-//			root.getChildren().add(controller.getView());
-//			LoginView view = new LoginView();
-//			new LoginController(new LoginModel(), view);
 			root.getChildren().add(new MainWindow());
 			
 			scene = new Scene(root, width, height);
-//			scene.getStylesheets().add("javafx/view/fxml/css/style.css");
 			stage.setScene(scene);
 			stage.show();
 		}

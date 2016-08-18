@@ -18,7 +18,9 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.model.BasePokemon;
 import javafx.model.Pokemon;
+import javafx.model.SearchTree;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TitledPane;
 import javafx.util.Duration;
@@ -28,7 +30,8 @@ import javafx.scene.image.ImageView;
 public class PullMenu extends TitledPane implements Initializable {
 
 	private static final ObservableList<Pokemon> pokemonList = FXCollections.observableArrayList();
-
+	private final SearchTree<BasePokemon> searchTree = new SearchTree();
+	
 	private final String saveFileLocation = System.getProperty("user.home") + System.getProperty("file.separator")
 			+ "poke-stats" + System.getProperty("file.separator");
 
@@ -121,12 +124,33 @@ public class PullMenu extends TitledPane implements Initializable {
 						+ p.getDefense().getText() + ":" + p.getSpa().getText() + ":" + p.getSpd().getText() + ":"
 						+ p.getSpeed().getText() + "\n");
 			}
+			if(pokemon != null)
 			w.write(pokemon.getId() + ":" + pokemon.getName() + ":" + pokemon.getHp().getText() + ":"
 					+ pokemon.getAttack().getText() + ":" + pokemon.getDefense().getText() + ":"
 					+ pokemon.getSpa().getText() + ":" + pokemon.getSpd().getText() + ":"
 					+ pokemon.getSpeed().getText());
 		} catch (IOException e) {
 			e.printStackTrace();
+		}
+	}
+	
+	public void loadPokemonList() {
+		File f = new File(saveFileLocation + "PokemonList.txt");
+
+		if (f.exists()) {
+			try (BufferedReader r = new BufferedReader(new FileReader(f))) {
+				String line = null;
+				while ((line = r.readLine()) != null) {
+					if (line.length() > 0 && line.charAt(0) != '#')
+						if (line.charAt(0) == '!') {
+							searchTree.put(line.substring(1).toLowerCase(), null);
+						} else {
+							
+						}
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
@@ -144,8 +168,8 @@ public class PullMenu extends TitledPane implements Initializable {
 							if (split.length == 8)
 								tryToAddPokemon(split[0], split[1], split[2], split[3], split[4], split[5], split[6],
 										split[7], false);
-						}else{
-							if(line.length() > 1)
+						} else {
+							if (line.length() > 1)
 								idField.setText(line.substring(1));
 						}
 				}
@@ -154,10 +178,36 @@ public class PullMenu extends TitledPane implements Initializable {
 			}
 		}
 	}
+	
+	private boolean fieldEmptyCheck(TextField field) {
+		if(field.getText().isEmpty()) {
+			field.setStyle("-fx-border-color: red;");
+			return false;
+		}else{
+			field.setStyle("-fx-border-color: lightgrey;");
+			return true;
+		}
+	}
+
+	private boolean fieldCheck(TextField field) {
+		boolean okay = fieldEmptyCheck(field);
+		Integer i;
+
+		if (okay) {
+			i = integerParser(field.getText());
+			if (i == null || i < 0 || i > 31) {
+				okay = false;
+				field.setStyle("-fx-border-color: red;");
+			} else
+				field.setStyle("-fx-border-color: lightgrey;");
+		}
+
+		return okay;
+	}
 
 	private boolean allFieldsHaveText() {
-		return !getIdF().equals("") && !getName().equals("") && !getHp().equals("") && !getAttack().equals("")
-				&& !getDefense().equals("") && !getSpa().equals("") && !getSpd().equals("") && !getSpeed().equals("");
+		return fieldEmptyCheck(idField) && checkNameField() && fieldCheck(hpField) && fieldCheck(attackField)
+				&& fieldCheck(defenseField) && fieldCheck(spaField) && fieldCheck(spdField) && fieldCheck(speedField);
 	}
 
 	public String getIdF() {
@@ -192,6 +242,11 @@ public class PullMenu extends TitledPane implements Initializable {
 		return speedField.getText();
 	}
 
+	public void remove(Pokemon p) {
+		pokemonList.remove(p);
+		savePokemon(null);
+	}
+	
 	public void buttonPullMenu(ImageView pullMenuIcon) {
 		setExpanded(!isExpanded());
 		if (isExpanded())
@@ -199,9 +254,26 @@ public class PullMenu extends TitledPane implements Initializable {
 		else
 			pullMenuIcon.setImage(new Image("javafx/view/image/Arrow_Left.png"));
 	}
+	
+	private boolean checkNameField() {
+		if(nameField.getText().isEmpty())
+			return false;
+		
+		if(searchTree.autocorrect(nameField.getText().toLowerCase()) != null)
+			nameField.setStyle("-fx-border-color: lightgrey;");
+		else
+			nameField.setStyle("-fx-border-color: red;");
+		
+		return true;
+	}
 
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
 		loadPokemons();
+		loadPokemonList();
+		
+		nameField.textProperty().addListener((observable, oldValue, newValue) -> {
+		    checkNameField();
+		});
 	}
 }

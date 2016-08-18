@@ -6,6 +6,7 @@ import java.util.ResourceBundle;
 import javafx.Resources;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.model.MyLabel;
@@ -15,6 +16,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
 
 public class MainWindow extends BorderPane implements Initializable {
@@ -87,6 +89,16 @@ public class MainWindow extends BorderPane implements Initializable {
 		
 		SortedList<Pokemon> sortedData = new SortedList<>(filteredData);
 		sortedData.comparatorProperty().bind(pokemonTable.comparatorProperty());
+		
+		this.setOnKeyPressed(new EventHandler<KeyEvent>() {
+		    @Override
+		    public void handle(KeyEvent t) {
+		    	if(t.getText().length() > 0 && (int)t.getText().charAt(0) == 127) {
+		    		for(int i = 0; i < pokemonTable.getSelectionModel().getSelectedItems().size(); i++)
+		    			pullMenu.remove(pokemonTable.getSelectionModel().getSelectedItems().get(i));
+		    	}
+		    }
+		});
 		
 		pokemonTable.setItems(sortedData);
 		
