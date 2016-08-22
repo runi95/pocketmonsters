@@ -38,7 +38,7 @@
 								<Insets />
 							</VBox.margin>
 						</HBox>
-						<TableView fx:id="pokemonTable" focusTraversable="false" />
+						<TableView fx:id="pokemonTable" />
 					</children>
 				</VBox>
 				<ImageView fx:id="pullMenuIcon" fitHeight="25.0" fitWidth="25.0"

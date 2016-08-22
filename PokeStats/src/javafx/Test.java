@@ -11,21 +11,26 @@ import java.net.URL;
 import java.util.ArrayList;
 
 import javafx.model.BasePokemon;
+import javafx.model.Type;
 import javafx.util.Pair;
 
 public class Test {
 	public static void main(String[] args) {
-		 ArrayList<BasePokemon> pkmList = getPokemon();
-//		ArrayList<BasePokemon> pkmList = new ArrayList<>();
-//		pkmList.add(getPokemon("Metalynx", null));
+		ArrayList<BasePokemon> pkmList = getPokemon();
+//		 ArrayList<BasePokemon> pkmList = new ArrayList<>();
+//		 pkmList.add(getPokemon("Metalynx", null));
 
 		try (BufferedWriter w = new BufferedWriter(new FileWriter(new File(
 				System.getProperty("user.home") + System.getProperty("file.separator") + "PokemonList.txt")))) {
-			int i = 1;
 			for (BasePokemon p : pkmList) {
-				System.out.println(i + " / " + pkmList.size());
-				w.write("!" + p.getName() + "\nHP:" + p.getHp().getKey() + "-" + p.getHp().getValue() + "\nAttack:"
-						+ p.getAttack().getKey() + "-" + p.getAttack().getValue() + "\nDefense:"
+				String evo = null;
+				for (String s : p.getEvolutions())
+					if (evo == null)
+						evo = "@" + s;
+					else if (s != null)
+						evo += "/" + s;
+				w.write("!" + p.getName() + "\n" + evo + "\n*" + p.getTypesString() + "\nHP:" + p.getHp().getKey() + "-" + p.getHp().getValue()
+						+ "\nAttack:" + p.getAttack().getKey() + "-" + p.getAttack().getValue() + "\nDefense:"
 						+ p.getDefense().getKey() + "-" + p.getDefense().getValue() + "\nSPA:" + p.getSpa().getKey()
 						+ "-" + p.getSpa().getValue() + "\nSPD:" + p.getSpd().getKey() + "-" + p.getSpd().getValue()
 						+ "\nSpeed:" + p.getSpeed().getKey() + "-" + p.getSpeed().getValue() + "\n\n");
@@ -81,7 +86,6 @@ public class Test {
 			}
 		}
 
-		/*
 		try (BufferedWriter w = new BufferedWriter(new FileWriter(
 				new File(System.getProperty("user.home") + System.getProperty("file.separator") + "test.txt")))) {
 			for (String s : list)
@@ -89,7 +93,6 @@ public class Test {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		*/
 
 		return basePokemonList;
 	}
@@ -122,6 +125,11 @@ public class Test {
 				new File(System.getProperty("user.home") + System.getProperty("file.separator") + "test.txt")))) {
 			ArrayList<String> minvalues = new ArrayList<>();
 			ArrayList<String> maxvalues = new ArrayList<>();
+			String[] evolutions = new String[10];
+			int typescnt = 0;
+			Type[] types = null;
+			Type type = null;
+			int evo = 0;
 
 			for (int i = 0; i < list.size(); i++) {
 				String s = list.get(i);
@@ -132,11 +140,32 @@ public class Test {
 							maxvalues.add(getMaxValue(list.get(i + 5)));
 						}
 					}
+				} else if (s.contains("evol") && s.startsWith("<td> <small>")) {
+					if (list.size() > i + 3) {
+						int index = list.get(i + 3).indexOf("<span style=\"color:#000;\">");
+						evolutions[evo] = list.get(i + 3).substring(index + "<span style=\"color:#000;\">".length());
+						evolutions[evo] = evolutions[evo].substring(0, evolutions[evo].indexOf('<'));
+						evo++;
+					}
+				}else if (s.contains("<td style=\"width: 45px; font-size: 85%; line-height:12px; background: ") && s.contains("type")) {
+					type = Type.getType(s.substring(s.indexOf("<b>") + "<b>".length(), s.indexOf("</b>")));
+					if(type != null)
+					if(types == null) {
+						types = new Type[++typescnt];
+						types[typescnt-1] = type;
+					}else if(!type.equals("Unknown")){
+						Type[] temp = new Type[++typescnt];
+						for(int j = 0; j < types.length; j++)
+							temp[j] = types[j];
+						types = temp;
+						types[typescnt-1] = type;
+					}
 				}
 				w.write(s + "\n");
 			}
 			System.out.println("Adding Pokemon: " + name);
-			if (minvalues.size() == 6 && maxvalues.size() == 6) {
+			if (((minvalues.size() == 6 && maxvalues.size() == 6)
+					|| (minvalues.size() == 12 && maxvalues.size() == 12)) && types != null) {
 				Pair<Integer, Integer> hp = new Pair<>(integerParser(minvalues.get(0)),
 						integerParser(maxvalues.get(0)));
 				Pair<Integer, Integer> attack = new Pair<>(integerParser(minvalues.get(1)),
@@ -150,23 +179,8 @@ public class Test {
 				Pair<Integer, Integer> speed = new Pair<>(integerParser(minvalues.get(5)),
 						integerParser(maxvalues.get(5)));
 
-				pkm = new BasePokemon(name, image, hp, attack, defense, spa, spd, speed);
-			} else if(minvalues.size() == 12 && maxvalues.size() == 12){
-				Pair<Integer, Integer> hp = new Pair<>(integerParser(minvalues.get(0)),
-						integerParser(maxvalues.get(0)));
-				Pair<Integer, Integer> attack = new Pair<>(integerParser(minvalues.get(1)),
-						integerParser(maxvalues.get(1)));
-				Pair<Integer, Integer> defense = new Pair<>(integerParser(minvalues.get(2)),
-						integerParser(maxvalues.get(2)));
-				Pair<Integer, Integer> spa = new Pair<>(integerParser(minvalues.get(3)),
-						integerParser(maxvalues.get(3)));
-				Pair<Integer, Integer> spd = new Pair<>(integerParser(minvalues.get(4)),
-						integerParser(maxvalues.get(4)));
-				Pair<Integer, Integer> speed = new Pair<>(integerParser(minvalues.get(5)),
-						integerParser(maxvalues.get(5)));
-
-				pkm = new BasePokemon(name, image, hp, attack, defense, spa, spd, speed);
-			}else
+				pkm = new BasePokemon(name, evolutions, types, image, hp, attack, defense, spa, spd, speed);
+			} else
 				System.out.println("Bad size!");
 
 			// System.out.println("HP: " + minvalues.get(0) + " - " +
@@ -187,10 +201,9 @@ public class Test {
 
 		return pkm;
 	}
-
+	
 	public static String getMinValue(String s) {
 		String s2 = s.substring(s.indexOf("<small>") + "<small>".length());
-		String s3 = null;
 		for (int i = 0; i < s2.length(); i++) {
 			if (s2.charAt(i) == ' ') {
 				return s2.substring(0, i);
@@ -202,7 +215,6 @@ public class Test {
 
 	public static String getMaxValue(String s) {
 		String s2 = s.substring(0, s.indexOf("</small>"));
-		String s3 = null;
 		for (int i = s2.length() - 1; i > 0; i--) {
 			if (s2.charAt(i) == ' ') {
 				return s2.substring(i + 1, s2.length());
